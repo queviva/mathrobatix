@@ -42,32 +42,34 @@
         steps: [
           {
             load: `
-             <x data-tite>
+             <x id="T27">27</x>
+             +
+             <x id="T3x2">
+              <x data-tite>
               <x id="T3">3</x>
-              <x id="Tx">x</x>
+              <x id="Tx-a">x</x>
+              <x data-sup data-tite>
+                <x id="pow2">2</x>
+              </x>
+              </x>
              </x>
-             <x id="Tplus-a">+</x>
-             <x id="T2">2g</x>
-             <x id="Tplus-b">+</x>
-             <x id="T9">9</x>
+             <x id="EQ">=</x>
+             <x id="T3plus">3 +</x>
+             <x data-tite>
+              <x id="T9">9</x>
+              <x>x</x>
+             </x>
+            </x>
           `,
             note: `prime movers`,
             acts: (X) => {
-              X.spot("Tx")
-                .vaporize().during(0, 0.6)
-                .unGrow().during(0.5, 1)
-              ;
-              X.spot("Tplus-b").grow();
-              X.mount("e-99", "e^2");
-              X.spot("T2")
-                // .funkSup("sin", "-1").during(0, 0.4)
-                .frak("e-99")
-                .foink("0.55em")
-                .vert("-0.2em")
-              ;
+              X.spot("T3plus").grow();
+              X.spot("T27").viva().during(0, 0.5);
+              X.spot("T27").spin().vault();
+              X.spot("T27").moveAfter("pow2").during(0.7, 1);
             },
           },
-          {},
+          {note:"remnant"},
         ],
       };
       const routineDemo = {
@@ -161,7 +163,7 @@
           },
         ],
       };
- </script>
+    </script>
 
     <script id="LOADER">
       const one = document.getElementById("one");

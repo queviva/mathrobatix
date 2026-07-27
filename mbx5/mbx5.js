@@ -123,30 +123,17 @@
       this.#holder = holder;
       this.#SKILLS = [
         this.#makeFundamentals(),
-        this.#makeSimpleShorts(),
         this.#makeDurationSkills(),
-        this.#makeMoveSkills(),
         this.#makeWrapSkills(),
+        this.#makeMoveSkills(),
         this.#makeGrowSkills(),
-        this.#makeFunkSkills(),
-        this.#makeJestSkills(),
-        this.#makeRootSkills(),
-        this.#makeFaxxSkills(),
-        this.#makeRazeSkills(),
-        this.#makeFrakSkills(),
-        this.#makeDistSkills(),
-        this.#makeExitSkills(),
-        this.#makeFadeSkills(),
+        // ... other omitted #makeSkills(),
       ];
       this.#makeAPI_SHORT_CLEAN();
       // this.#RO = this.#makeResizeObserver();
       window.addEventListener("orientationchange", (e) => {
         log("change orientals");
       });
-    }
-
-    get #bitties() {
-      return this.#battiesInstance;
     }
 
     // #region SPOT UTILS
@@ -244,14 +231,14 @@
       }
     }
 
-    #wrap(batties, type, vals) {
+    #wrap(batties, skill, vals) {
       for (const bat of batties) {
         let targ;
         if (bat.tagName === "path") {
-          bat.setAttribute(`data-${type}`, "");
+          bat.setAttribute(`data-${skill}`, "");
           targ = bat;
         } else {
-          bat.innerHTML = `<x data-${type}>${bat.innerHTML}</x>`;
+          bat.innerHTML = `<x data-${skill}>${bat.innerHTML}</x>`;
           targ = bat.children[0];
         }
         targ.setAttribute("data-source", bat.id);
@@ -276,7 +263,6 @@
     }
 
     #unShort = (skill, bat) => {
-      log("bat in unshort", bat, bat.children)
       this.#wrap([bat], skill);
       return [...bat.children];
     };
@@ -304,6 +290,7 @@
             return this.#API;
           },
           mount: (id, html, vals = {}) => {
+            // const bat = this.#saniTag("x", html, { ...vals, id: CSS.escape(id) });
             const bat = this.#makeTag("x", html, { ...vals, id: CSS.escape(id) });
             this.#stageObj?.append(bat);
             return this.#API.spot(bat.id);
@@ -325,21 +312,19 @@
             }
             return this.#API.spot(id);
           },
-          insertBefore: (id) => {
+          insert: (id, dir) => {
             const beef = this.#API.pick(id);
             if (!beef || !beef.parentNode) return this.#API;
             for (const bat of this.#batties) {
-              beef.parentNode.insertBefore(bat, beef);
+              beef.parentNode.insertBefore(bat, dir === "before" ? beef : beef.nextSibling);
             }
             return this.#API;
           },
+          insertBefore: (id) => {
+            this.#API.insert(id, "before");
+          },
           insertAfter: (id) => {
-            const beef = this.#API.pick(id);
-            if (!beef || !beef.parentNode) return this.#API;
-            for (const bat of this.#batties) {
-              beef.parentNode.insertBefore(bat, beef.nextSibling);
-            }
-            return this.#API;
+            this.#API.insert(id, "after");
           },
           hide: () => {
             for (const bat of this.#batties) {
@@ -384,7 +369,6 @@
               for (const [key, value] of Object.entries(vals)) {
                 bat.style.setProperty(key, value);
               }
-              // bat.style.setProperty(`--${this.#opts.fix}-${prop}`, val);
             }
             return this.#API;
           },
@@ -428,26 +412,6 @@
       };
     }
 
-    #makeSimpleShorts() {
-      return {
-        short: {
-          "[data-good]": (bat) => {
-            bat.innerHTML = `
-             <svg data-good-svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path />
-             </svg>
-            `;
-          },
-          "mbx-half": (bat) => {
-            return this.#makeTag("x", `&frac12;`, {
-              ...(bat.id ? { id: bat.id } : {}),
-              half: "",
-            });
-          },
-        },
-      };
-    }
-
     #makeDurationSkills() {
       return {
         api: {
@@ -474,19 +438,21 @@
                 }
                 continue;
               }
-              if (bat.hasAttribute("data-logged")) {
+              if (bat.hasAttribute("data-funk")) {
                 bat.style.setProperty("--ani-start", s);
                 bat.style.setProperty("--ani-end", e);
-                const id = bat.getAttribute("data-logged");
-                const open = this.#stageObj.querySelector(`[data-source="${id}-log-open"]`);
-                const close = this.#stageObj.querySelector(`[data-source="${id}-log-close"]`);
+                const id = bat.getAttribute("data-funk");
+                const open = this.#stageObj.querySelector(`[data-funk-open][data-source="${id}"]`);
+                const close = this.#stageObj.querySelector(
+                  `[data-funk-close][data-source="${id}"]`,
+                );
                 for (const log of [open, close]) {
                   log.style.setProperty("--ani-start", s);
                   log.style.setProperty("--ani-end", e);
                 }
                 // continue;
               }
-              if (bat.hasAttribute("data-grow")) {
+              if (bat.hasAttribute("data-grow-holder")) {
                 bat.style.setProperty("--ani-start", s);
                 bat.style.setProperty("--ani-end", e);
                 continue;
@@ -500,7 +466,7 @@
               }
               let fc = bat;
               if (bat.children[0]) {
-                fc = bat.children[0].hasAttribute("data-grow") ? bat : bat.children[0];
+                fc = bat.children[0];
               }
 
               fc.style.setProperty("--ani-start", s);
@@ -519,222 +485,6 @@
           },
         ],
       };
-    }
-
-    #makeMoveBlank(type, prime) {
-      // try using a stripped clone
-      const clone = prime.cloneNode(true);
-      for (const tuck of clone.querySelectorAll("[data-tuck], [data-vault], [data-spin]")) {
-        tuck.replaceWith(...[...tuck.childNodes]);
-      }
-
-      // make blank with INVISIBLE text ... haaaakc!!!
-      const blank = this.#makeTag("x", `<x>${clone.innerHTML}</x>`, {
-        id: `${prime.id}-${type}-blank`,
-        source: prime.id,
-        blank: type,
-      });
-
-      // put the blank in the original spot
-      prime.parentNode.insertBefore(blank, prime);
-
-      // store the prime mover inside the blank
-      blank.append(prime);
-
-      // remember the prime id
-      prime.setAttribute("data-source", prime.id);
-    }
-
-    async #measureMovers(stage) {
-      const all = stage.querySelectorAll("*");
-      const origBlanks = stage.querySelectorAll(`[data-blank="origin"]`);
-      const destBlanks = stage.querySelectorAll(`[data-blank="destiny"]`);
-
-      const growers = stage.querySelectorAll(`[data-grow]`);
-      for (const grower of growers) {
-        log("grower:", grower.id);
-      }
-
-      const movers = new Map(
-        Array.from(stage.querySelectorAll("[data-move]"), (bat) => [
-          bat.getAttribute("data-source"),
-          bat,
-        ]),
-      );
-
-      const orig = { blanks: new Map(), rects: new Map(), fonts: new Map() };
-      const dest = { blanks: new Map(), rects: new Map(), fonts: new Map() };
-      const anims = new Map();
-
-      // sort blanks
-      for (const blank of origBlanks) {
-        const id = blank.getAttribute("data-source");
-        orig.blanks.set(id, blank);
-      }
-      for (const blank of destBlanks) {
-        const id = blank.getAttribute("data-source");
-        dest.blanks.set(id, blank);
-      }
-
-      // get animations
-      for (const one of all) {
-        const animList = one.getAnimations();
-        if (animList.length > 0) {
-          anims.set(one, animList);
-        }
-      }
-
-      // set to initial state
-      for (const animList of anims.values()) {
-        for (const anim of animList) {
-          anim.pause();
-          anim.currentTime = CSS.percent(0);
-        }
-      }
-
-      for (const blank of orig.blanks.values()) {
-        blank.style.removeProperty("--mbx-width");
-      }
-
-      for (const blank of dest.blanks.values()) {
-        blank.style.removeProperty("--mbx-width");
-      }
-
-      // force layout HAKC !!!
-      await raf();
-
-      // set origin rects
-      for (const [id, blank] of orig.blanks.entries()) {
-        orig.rects.set(id, blank.getBoundingClientRect());
-        orig.fonts.set(id, parseFloat(getComputedStyle(blank).fontSize));
-        this.#measureElements(blank);
-      }
-
-      // set all animations to final state
-      for (const animList of anims.values()) {
-        for (const anim of animList) {
-          anim.currentTime = CSS.percent(100);
-        }
-      }
-
-      // force layout HAKC !!!
-      await raf();
-
-      // set the destiny rects
-      for (const [id, blank] of dest.blanks.entries()) {
-        dest.rects.set(id, blank.getBoundingClientRect());
-        dest.fonts.set(id, parseFloat(getComputedStyle(blank).fontSize));
-        this.#measureElements(blank);
-      }
-
-      // set the deltas for the move animation
-      for (const [id, prime] of movers.entries()) {
-        const SR = stage.getBoundingClientRect();
-        const OR = orig.rects.get(id);
-        const DR = dest.rects.get(id);
-
-        const deltas = [
-          // ["dx", OR.x - DR.x],
-          // ["dy", OR.y - DR.y],
-          ["old-top", OR.top - SR.top],
-          ["new-top", DR.top - SR.top],
-          ["old-left", OR.left - SR.left],
-          ["new-left", DR.left - SR.left],
-          ["old-wide", OR.width],
-          ["new-wide", DR.width],
-          ["old-high", OR.height],
-          ["new-high", DR.height],
-          ["old-font", orig.fonts.get(id)],
-          ["new-font", dest.fonts.get(id)],
-        ];
-
-        for (const [key, val] of deltas) {
-          prime.style.setProperty(`--${this.#opts.fix}-${key}`, `${val}px`);
-        }
-      }
-
-      // restart animations
-      for (const animList of anims.values()) {
-        for (const anim of animList) {
-          anim.play();
-        }
-      }
-
-      return true;
-    }
-
-    #makeMoveSkills() {
-      const move = (anchorID, direction) => {
-        const anchor = this.#API.pick(anchorID);
-        if (!anchor) return this.#API;
-
-        const primeMovers = direction === "after" ? this.#batties.reverse() : this.#batties;
-
-        for (const prime of primeMovers) {
-          this.#makeMoveBlank("origin", prime);
-          const ref = direction === "after" ? anchor.nextSibling : anchor;
-          anchor.parentNode.insertBefore(prime, ref);
-          this.#makeMoveBlank("destiny", prime);
-          prime.setAttribute("data-move", "");
-          this.#stageObj.append(prime);
-        }
-
-        this.#stageObj.setAttribute("data-resized", "0");
-        this.#stageObj.setAttribute("data-stepNum", this.#stepNum);
-        // this.#RO.observe(this.#stageObj); // note: observe calls #measureMovers
-        this.#measureMovers(this.#stageObj);
-
-        return this.#API;
-      };
-
-      return {
-        api: {
-          moveBefore: (id) => move(id, "before"),
-          moveAfter: (id) => move(id, "after"),
-        },
-        clean: [
-          (stage) => {
-            for (const blank of stage.querySelectorAll(`[data-blank="destiny"]`)) {
-              const id = blank.getAttribute("data-source");
-              blank.children[0].id = id;
-              blank.replaceWith(blank.children[0]);
-            }
-            for (const blank of stage.querySelectorAll("[data-blank]")) {
-              blank.remove();
-            }
-            for (const mover of stage.querySelectorAll("[data-move]")) {
-              mover.remove();
-            }
-          },
-        ],
-      };
-    }
-
-    #makeResizeObserver() {
-      return new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const target = entry.target;
-          let count = parseInt(target.getAttribute("data-resized")) || 0;
-
-          if (count === 0) {
-            // target.setAttribute("data-resized", 1);
-            // continue;
-          }
-
-          target.setAttribute("data-resized", ++count);
-
-          if (this.#resizeFrames.has(target)) {
-            cancelAnimationFrame(this.#resizeFrames.get(target));
-          }
-
-          const frameId = requestAnimationFrame(() => {
-            this.#measureMovers(target);
-            this.#resizeFrames.delete(target);
-          });
-
-          this.#resizeFrames.set(target, frameId);
-        }
-      });
     }
 
     #makeWrapSkills() {
@@ -769,7 +519,7 @@
         api[skill] = (val) => {
           this.#wrap(this.#batties, skill, { ...(val ? { [`--${fixy}-val`]: val } : {}) });
           return this.#API;
-        }
+        };
         short[fixy] = (bat) => this.#unShort(skill, bat);
         if (!permas.has(skill)) {
           clean.push((stage) => this.#unWrap(stage, skill));
@@ -792,50 +542,42 @@
     }
 
     #makeGrowSkills() {
-      const skills = ["grow", "tite"];
+      const skills = ["grow"];
       const api = {};
       const short = {};
       const clean = [];
 
-      clean.push((stage) => {
-        for (const bat of stage.querySelectorAll("[data-grow]")) {
-          const val = bat.getAttribute("data-grow");
-          bat.removeAttribute("data-grow");
-          bat.removeAttribute("style");
-          if (val === "back") {
-            bat.remove();
-          }
+      const groink = (vals = {}, skill, dir = "fore") => {
+        this.#wrap(this.#batties, skill, { ...(vals ? vals : {}), [`${skill}`]: dir });
+        for (const bat of this.#batties) {
+          bat.setAttribute(`data-${skill}-holder`, dir);
+          // this.#measureElements(bat.children[0]);
         }
-      });
+        return this.#API;
+      };
 
       for (const skill of skills) {
         const fixy = `${this.#opts.fix}-${skill}`;
-        api[skill] = (v) => {
-          this.#measureElements(...this.#batties);
-          this.#wrap(this.#batties, skill, { [`${skill}`]: "fore" });
-          return this.#API;
-        };
-        api[camel(skill)] = (v) => {
-          this.#measureElements(...this.#batties);
-          this.#wrap(this.#batties, skill, { [`${skill}`]: "back" });
-          return this.#API;
-        };
+        api[skill] = (vals) => groink(vals, skill, "fore");
+        api[camel(skill)] = (vals) => groink(vals, skill, "back");
         short[fixy] = (bat) => {
           const val = bat.getAttribute("val");
-          return this.#makeTag("x", `<x data-${skill}>${bat.innerHTML}</x>`, {
-            ...(val ? { [`--${this.#opts.fix}-${skill}-val`]: val } : {}),
+          return this.#makeTag("x", `<x data-${skill}-holder="fore"><x data-${skill}>${bat.innerHTML}</x></x>`, {
+            ...(val ? { [`--${fixy}-val`]: val } : {}),
             ...(bat.id ? { id: bat.id } : {}),
           });
         };
         clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(`[data-${skill}]`)) {
-            const val = bat.getAttribute(`data-${skill}`);
-            bat.removeAttribute("style");
+          for (const bat of stage.querySelectorAll(`[data-${skill}-holder]`)) {
+            const val = bat.getAttribute(`data-${skill}-holder`);
             if (val === "fore") {
-              bat.setAttribute(`data-${skill}`, "");
+              this.#unWrap(stage, `${skill}`);
+              bat.removeAttribute(`data-${skill}-holder`);
             } else if (val === "back") {
-              bat.removeAttribute(`data-${skill}`);
+              log("removing bat", bat.id);
+              bat.remove();
             }
+            // this.#unWrap(stage, skill);
           }
         });
       }
@@ -843,595 +585,188 @@
       return { api: api, short: short, clean: clean };
     }
 
-    #makeFunkSkills() {
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      const makeHTML = {
-        open: (skill, sup, base) => {
-          const kind = sup === "sup" ? "data-sup" : "data-sub";
-          const bTag = base ? `<x ${kind}>${base}</x>` : "";
-          return `
-              <x data-tite>
-               <x data-funk-text="${skill}">${skill}</x>
-               ${bTag}
-               <x>(</x>
-              </x>
-            `;
-        },
-        close: (id, skill) => {
-          return `<x>)</x>`;
-        },
-        funk: (skill, base, sup, dir) => {
-          const bat = this.#batties?.[0];
-          if (!bat?.id) return;
-
-          const skillID = `${bat.id}-${skill}`;
-          const groink =
-            dir === "fore"
-              ? () => this.#API.grow()
-              : dir === "back"
-                ? () => this.#API.unGrow()
-                : () => {};
-
-          this.#API
-            .mount(`${skillID}-open`, makeHTML.open(skill, sup, base), {
-              "funk-open": "",
-            })
-            .insertBefore(bat.id);
-
-          groink();
-
-          this.#API
-            .mount(`${skillID}-close`, makeHTML.close(), {
-              "funk-close": "",
-            })
-            .insertAfter(bat.id);
-
-          groink();
-
-          this.#API.spot(`${skillID}-open`, bat.id, `${skillID}-close`).team(skillID, { tite: "" });
-          this.#API.spot(skillID);
-          this.#wrap(this.#batties, "funk", { tite: "" });
-          return this.#API.spot(skillID);
-        },
-      };
-
-      api["funk"] = (skill = "ln", base) => makeHTML.funk(skill, base, "sub", "fore");
-      api["funkSup"] = (skill = "ln", base) => makeHTML.funk(skill, base, "sup", "fore");
-      api["unFunk"] = (skill = "ln", base) => makeHTML.funk(skill, base, "sub", "back");
-      api["unFunkSup"] = (skill = "ln", base) => makeHTML.funk(skill, base, "sup", "back");
-
-      const fixy = `${this.#opts.fix}-funk`;
-      short[fixy] = (bat) => {
-        bat.id ||= `${fixy}-${crypto.randomUUID()}`;
-        const skill = bat.getAttribute("skill") || "";
-        const sup = bat.getAttribute("sup");
-        const sub = bat.getAttribute("sub");
-        const tag = this.#makeTag("x", bat.innerHTML, { id: bat.id });
-        bat.replaceWith(tag);
-        this.#API.spot(bat.id);
-        if (sub) {
-          makeHTML.funk(skill, sub, "sub", "");
-        } else {
-          makeHTML.funk(skill, sup, "sup", "");
-        }
-      };
-
-      return { api: api, short: short, clean: clean };
-    }
-
-    #makeJestSkills() {
-      const skills = {
-        draw: ["cank", "xout", "good"],
-        clip: ["cirk", "brak"],
-      };
-
-      const makeHTML = {
-        draw: (html, skill) => {
-          return `
-           <x data-${skill}-text>${html}</x>
-           <svg data-${skill}-svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path data-main data-${skill} />
-           </svg>
-          `;
-        },
-        clip: (html, skill) => {
-          const clipID = `${this.#opts.fix}-${crypto.randomUUID()}`;
-          return `
-           <x data-${skill}-text>${html}</x>
-           <svg data-${skill}-svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <clipPath data-clip id="${clipID}"><path data-main data-${skill}/></clipPath>
-            <path data-${skill}-base clip-path="url(#${clipID})" />
-           </svg>
-          `;
-        },
-      };
-
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      for (const type of Object.keys(skills)) {
-        for (const skill of skills[type]) {
-          const fixy = `${this.#opts.fix}-${skill}`;
-          api[skill] = (val) => {
-            for (const bat of this.#batties) {
-              const tag = this.#makeTag("x", makeHTML[type](bat.innerHTML, skill), {
-                jest: "fore",
-                [`${type}`]: "",
-                ...(val && { [`--${fixy}-val`]: val }),
-              });
-              bat.innerHTML = `${tag.outerHTML}`;
-            }
-            return this.#API;
-          };
-          api[camel(skill)] = () => {
-            for (const bat of this.#batties) {
-              for (const jest of bat.querySelectorAll("[data-jest]")) {
-                jest.setAttribute("data-jest", "back");
-                if (type === "clip") {
-                  const clip = jest.querySelector("[data-clip]");
-                  clip.id = `${this.#opts.fix}-${crypto.randomUUID()}`;
-                  jest
-                    .querySelector(`[data-${skill}-base]`)
-                    .setAttribute("clip-path", `url(#${clip.id})`);
-                }
-              }
-            }
-            return this.#API;
-          };
-          short[fixy] = (bat) => {
-            const tag = this.#makeTag(
-              "x",
-              `<x data-jest>${makeHTML[type](bat.innerHTML, skill)}</x>`,
-              {
-                ...(bat.id ? { id: bat.id } : {}),
-                ...(bat.getAttribute("val") ? { [`--${fixy}-val`]: bat.getAttribute("val") } : {}),
-              },
-            );
-
-            if (type === "clip") {
-              tag.querySelector(`[data-${skill}-base]`).setAttribute("clip-path", "");
-            }
-            return tag;
-          };
-        }
-        clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(`[data-jest][data-${type}]`)) {
-            const val = bat.getAttribute("data-jest");
-            if (val === "fore") {
-              bat.setAttribute("data-jest", "");
-              bat.querySelector("svg > path")?.setAttribute("clip-path", "");
-            } else if (val === "back") {
-              const targ = bat.children[0];
-              bat.replaceWith(...[...targ.childNodes]);
-            }
-            // else {
-            // log("[[[cleaning jest with no value]]]");
-            // }
-          }
-        });
+    #makeMoveBlank(type, prime) {
+      // try using a stripped clone
+      const clone = prime.cloneNode(true);
+      for (const tuck of clone.querySelectorAll("[data-tuck], [data-vault], [data-spin]")) {
+        tuck.replaceWith(...[...tuck.childNodes]);
       }
 
-      return {
-        short: short,
-        api: api,
-        clean: clean,
-      };
-    }
-
-    #makeFrakSkills() {
-      const skills = ["frak"];
-
-      const makeHTML = {
-        frak: (id) => {
-          return `
-           <x data-frak-holder>
-            <x data-frak>
-             <x data-numerator ${id ? `id="${id}-numerator"` : ""}></x>
-             <x data-slash ${id ? `id="${id}-slash"` : ""}>
-              <svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
-               <path ${id ? `id="${id}-slash-path"` : ""}   />
-              </svg>
-             </x>
-             <x data-denominator ${id ? `id="${id}-denominator"` : ""}></x>
-            </x>
-           </x>
-          `;
-        },
-      };
-
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      for (const skill of skills) {
-        const fixy = `${this.#opts.fix}-${skill}`;
-        api[skill] = (...ids) => {
-          const bat0 = this.#batties[0];
-          const ID = `${bat0.id}-${skill}`;
-          const top = this.#makeTag("x", makeHTML[skill](ID), { id: ID });
-          const guy = top.querySelector(`[data-${skill}]`);
-          guy.setAttribute(`data-${skill}`, "fore");
-          const [num, slash, den] = guy.children;
-          bat0.parentNode.insertBefore(top, bat0);
-          for (const bat of this.#batties) num.append(bat);
-          for (const id of new Set(ids)) den.append(this.#API.pick(id));
-          return this.#API.spot(ID);
-        };
-        api[camel(skill)] = () => {
-          for (const bat of this.#batties) {
-            const guy = bat?.children[0]?.children[0];
-            if (!guy) continue;
-            guy.setAttribute(`data-${skill}`, "back");
-          }
-          return this.#API;
-        };
-        short[fixy] = (bat) => {
-          if (bat.children.length !== 2) return;
-          const [orgNum, orgDen] = bat.children;
-          const top = this.#makeTag("x", makeHTML[skill](bat?.id), {
-            ...(bat.id ? { id: bat.id } : {}),
-          });
-          const guy = top.querySelector(`[data-${skill}]`);
-          guy.children[0].append(orgNum);
-          guy.children[2].append(orgDen);
-          return top;
-        };
-        clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(
-            `[data-${skill}="fore"], [data-${skill}="back"]`,
-          )) {
-            const val = bat.getAttribute(`data-${skill}`);
-            if (val === "fore") {
-              bat.setAttribute(`data-${skill}`, "");
-            } else if (val === "back") {
-              const top = bat?.parentNode?.parentNode;
-              const num = bat?.children?.[0];
-              if (!top || !num) continue;
-              top.replaceWith(...[...num.childNodes]);
-            }
-          }
-        });
-      }
-
-      api["kate"] = (dir = 1) => {
-        const batties = this.#batties;
-        this.#API.spin(`${180 * dir}deg`);
-        for (const bat of batties) {
-          bat.setAttribute("data-kate", "");
-          const [num, den] = bat.querySelectorAll("[data-numerator], [data-denominator]");
-          this.#batties = [num, den];
-          this.#API.spin(`${-180 * dir}deg`);
-        }
-        this.#batties = batties;
-        return this.#API;
-      };
-      clean.push((stage) => {
-        for (const bat of stage.querySelectorAll("[data-kate]")) {
-          const [num, den] = bat.querySelectorAll("[data-numerator], [data-denominator]");
-          num.removeAttribute("data-numerator");
-          num.setAttribute("data-denominator", "");
-          den.removeAttribute("data-denominator");
-          den.setAttribute("data-numerator", "");
-          swapElements(num, den);
-          bat.removeAttribute("data-kate");
-        }
+      // make blank with INVISIBLE text ... haaaakc!!!
+      const blank = this.#makeTag("x", `<x data-blank="${type==="origin"?"back":"fore"}">${clone.innerHTML}</x>`, {
+        id: `${prime.id}-${type}-blank`,
+        source: prime.id,
+        blank: type,
+        "blank-holder": type === "origin" ? "back" : "fore"
       });
 
-      api["inlineFrak"] = () => {
-        for (const bat of this.#batties) {
-          const [num, den] = bat.querySelectorAll("[data-numerator], [data-denominator]");
-          if (!num || !den) continue;
-          log(num, den);
-        }
-      };
-      return { api: api, short: short, clean: clean };
+      // put the blank in the original spot
+      prime.parentNode.insertBefore(blank, prime);
+
+      // store the prime mover inside the blank
+      blank.append(prime);
+
+      // remember the prime id
+      prime.setAttribute("data-source", prime.id);
     }
 
-    #makeRootSkills() {
-      const skills = ["root"];
+    async #measureMovers(stage) {
+      const orig = { blanks: new Map(), rects: new Map(), fonts: new Map() };
+      const dest = { blanks: new Map(), rects: new Map(), fonts: new Map() };
+      const anims = new Map();
 
-      const api = {};
-      const short = {};
-      const clean = [];
+      const all = stage.querySelectorAll("*");
+      const origBlanks = stage.querySelectorAll(`[data-blank="origin"]`);
+      const destBlanks = stage.querySelectorAll(`[data-blank="destiny"]`);
 
-      api["root"] = (base = null) => {
-        const bat0 = this.#batties[0];
-        const id = `${bat0.id}-root`;
-        const holder = this.#makeTag("x", "", {
-          id: `${id}-holder`,
-          source: id,
-          ["root-holder"]: "",
-        });
-        const root = this.#makeTag("x", "", {
-          id: CSS.escape(id),
-          root: "fore",
-        });
-        const terms = this.#makeTag("x", "", {
-          source: id,
-          ["root-terms"]: "",
-        });
-        const lines = this.#makeTag(
-          "x",
-          `
-            <svg data-front-svg viewBox="0 0 24 100" preserveAspectRatio="none" aria-hidden="true">
-             <path/>
-            </svg>
-            <svg data-top-svg viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true">
-             <path/>
-            </svg>
-          `,
-          {
-            ["root-lines"]: "",
-            source: id,
+      const movers = new Map(
+        Array.from(stage.querySelectorAll("[data-move]"), (bat) => [
+          bat.getAttribute("data-source"),
+          bat,
+        ]),
+      );
+
+      // sort blanks
+      for (const blank of origBlanks) {
+        const id = blank.getAttribute("data-source");
+        orig.blanks.set(id, blank);
+      }
+      for (const blank of destBlanks) {
+        const id = blank.getAttribute("data-source");
+        dest.blanks.set(id, blank);
+      }
+
+      // get animations
+      for (const one of all) {
+        const animList = one.getAnimations();
+        if (animList.length > 0) {
+          anims.set(one, animList);
+        }
+      }
+
+      // set to initial state
+      for (const animList of anims.values()) {
+        for (const anim of animList) {
+          anim.pause();
+          anim.currentTime = CSS.percent(0);
+        }
+      }
+
+      // force layout HAKC !!!
+      await raf();
+
+      // set origin rects
+      for (const [id, blank] of orig.blanks.entries()) {
+        orig.rects.set(id, blank.getBoundingClientRect());
+        orig.fonts.set(id, parseFloat(getComputedStyle(blank).fontSize));
+        // this.#measureElements(blank);
+      }
+
+      // set all animations to final state
+      for (const animList of anims.values()) {
+        for (const anim of animList) {
+          anim.currentTime = CSS.percent(100);
+        }
+      }
+
+      // force layout HAKC !!!
+      await raf();
+
+      // set the destiny rects
+      for (const [id, blank] of dest.blanks.entries()) {
+        dest.rects.set(id, blank.getBoundingClientRect());
+        dest.fonts.set(id, parseFloat(getComputedStyle(blank).fontSize));
+        // this.#measureElements(blank);
+      }
+      // set the deltas for the move animation (relative to dest mover)
+      for (const [id, prime] of movers.entries()) {
+        const OR = orig.rects.get(id);
+        const DR = dest.rects.get(id);
+
+        const deltas = [
+          // positions: start at dest (0,0) and move to orig
+          ["old-top", OR.top - DR.top],
+          ["new-top", 0],
+          ["old-left", 0],//OR.left - DR.left - OR.width - 6],
+          ["new-left", 0],
+
+          // sizes: start at dest size and animate to orig size
+          ["old-wide", OR.width],
+          ["new-wide", DR.width],
+          ["old-high", OR.height],
+          ["new-high", DR.height],
+
+          // fonts: start at dest font and animate to orig font
+          ["old-font", orig.fonts.get(id)],
+          ["new-font", dest.fonts.get(id)],
+        ];
+
+        // actually set the values
+        for (const [key, val] of deltas) {
+          prime.style.setProperty(`--${this.#opts.fix}-${key}`, `${val}px`);
+        }
+
+      }
+
+      // restart animations
+      for (const animList of anims.values()) {
+        for (const anim of animList) {
+          anim.play();
+        }
+      }
+
+      return true;
+    }
+
+    #makeMoveSkills() {
+      const move = (anchorID, direction) => {
+        const anchor = this.#API.pick(anchorID);
+        if (!anchor) return this.#API;
+
+        const primeMovers = direction === "after" ? this.#batties.reverse() : this.#batties;
+
+        for (const prime of primeMovers) {
+          this.#makeMoveBlank("origin", prime);
+          const ref = direction === "after" ? anchor.nextSibling : anchor;
+          anchor.parentNode.insertBefore(prime, ref);
+          this.#makeMoveBlank("destiny", prime);
+          prime.setAttribute("data-move", "");
+        }
+        this.#measureMovers(this.#stageObj);
+
+        this.#stageObj.setAttribute("data-resized", "0");
+        this.#stageObj.setAttribute("data-stepNum", this.#stepNum);
+        // this.#RO.observe(this.#stageObj); // note: observe calls #measureMovers
+        // this.#measureMovers(this.#stageObj);
+
+        return this.#API;
+      };
+
+      return {
+        api: {
+          moveBefore: (id) => move(id, "before"),
+          moveAfter: (id) => move(id, "after"),
+        },
+        clean: [
+          (stage) => {
+            for (const blank of stage.querySelectorAll(`[data-blank="destiny"]`)) {
+              const id = blank.getAttribute("data-source");
+              blank.children[0].id = id;
+              blank.replaceWith(blank.children[0]);
+            }
+            for (const blank of stage.querySelectorAll("[data-blank]")) {
+              blank.remove();
+            }
+            for (const mover of stage.querySelectorAll("[data-move]")) {
+              mover.remove();
+            }
           },
-        );
-        const order = this.#makeTag("x", base || "", {
-          ["root-order"]: "",
-          source: id,
-        });
-        root.append(lines, terms);
-        if (base) root.append(order);
-        holder.append(root);
-        bat0.replaceWith(holder);
-        for (const el of this.#batties) {
-          terms.append(el);
-        }
-        return this.#API.spot(id);
-      };
-      api["unRoot"] = () => {
-        for (const bat of this.#batties) {
-          bat.setAttribute("data-root", "back");
-        }
-      };
-      clean.push((stage) => {
-        for (const bat of stage.querySelectorAll("[data-root]")) {
-          const val = bat.getAttribute("data-root");
-          if (val) {
-            bat.setAttribute("data-root", "");
-          }
-        }
-      });
-
-      return { api: api, short: short, clean: clean };
-    }
-
-    #makeFaxxSkills() {
-      const skills = ["faxx", "hint"];
-
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      const makeHTML = {
-        all: (skill, dir, id) => {
-          // only one bat allowed
-          const bat = this.#batties[0];
-          const box = this.#stageObj.querySelector(`#${CSS.escape(id)}`);
-          if (!bat || !box) return;
-
-          const fax = this.#makeTag("x", "", { id: `${bat.id}-${skill}`, [`${skill}`]: dir });
-          bat.replaceWith(fax);
-          fax.append(bat, box);
-
-          const batWide = bat.getBoundingClientRect().width;
-          const boxWide = box.getBoundingClientRect().width;
-
-          const start = dir === "fore" ? batWide : boxWide;
-          const end = (dir === "fore" ? Math.max : Math.min)(batWide, boxWide);
-
-          fax.style.setProperty(`--${this.#opts.fix}-start-wide`, start + "px");
-          fax.style.setProperty(`--${this.#opts.fix}-end-wide`, end + "px");
-          makeHTML[skill](bat, box);
-
-          return this.#API.spot(fax.id);
-        },
-        faxx: (bat, box) => {
-          this.#API.spot(bat.id).ghost();
-          this.#API.spot(box.id).viva().salute();
-        },
-        hint: (bat, box) => {
-          this.#API.spot(bat.id).ghost();
-          this.#API.spot(box.id).viva().salute();
-        },
-        unHint: (bat, box) => {
-          this.#API.spot(bat.id).setFilter("vaporize").clearFilter();
-          this.#API.spot(box.id).retreat();
-        },
-        unFaxx: (bat, box) => {
-          this.#API.spot(bat.id).setFilter("ghost").clearFilter();
-          this.#API.spot(box.id).retreat();
-        },
-      };
-
-      for (const skill of skills) {
-        api[skill] = (id) => {
-          return makeHTML.all(skill, "fore", id);
-        };
-        api[camel(skill)] = (id) => {
-          return makeHTML.all(camel(skill), "back", id);
-        };
-        clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(`[data-${skill}]`)) {
-            const val = bat.getAttribute(`data-${skill}`);
-            if (val === "fore") {
-              bat.setAttribute(`data-${skill}`, "");
-            }
-          }
-        });
-        clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(`[data-${camel(skill)}]`)) {
-            bat.children[0].style.textShadow = "none";
-            bat.children[0].style.color = "currentColor";
-            bat.children[1].remove();
-            this.#unWrap(stage, camel(skill));
-          }
-        });
-      }
-
-      return { api: api, short: short, clean: clean };
-    }
-
-    #makeRazeSkills() {
-      const skills = ["raze"];
-
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      for (const skill of skills) {
-        api[skill] = (id) => {
-          this.#API.team(`${id}-${skill}`, { [`${skill}`]: "fore" });
-          this.#API.spot(id).insertBefore(`${id}-${skill}`).grow();
-          return this.#API;
-        };
-        api[camel(skill)] = (id) => {
-          this.#API.team(`${id}-${skill}`, { [`${skill}`]: "back" });
-          this.#API.spot(id).insertBefore(`${id}-${skill}`).unGrow();
-          return this.#API;
-        };
-        clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(`[data-${skill}="fore"]`)) {
-            bat.removeAttribute(`data-${skill}`);
-            bat.setAttribute("data-sup", "");
-          }
-          for (const bat of stage.querySelectorAll(`[data-${skill}="back"]`)) {
-            bat.removeAttribute(`data-${skill}`);
-            bat.removeAttribute("data-sup");
-          }
-        });
-      }
-
-      return { api: api, short: short, clean: clean };
-    }
-
-    #makeDistSkills() {
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      api["dist"] = (id) => {
-        const coef = this.#API.pick(CSS.escape(id));
-        if (!coef) return;
-
-        const batties = this.#batties;
-        const total = batties.length;
-
-        const co_txt = coef.innerText;
-        this.#API.spot(id).doppel(total);
-        this.#API.spot(id).vaporize().during(0.05, 0.7);
-        this.#API.spot(`${id}-doppel`).unGrow().during(0.6, 1);
-
-        for (let i = 0; i < total; i++) {
-          const batID = batties[i].id;
-          const batDot = batID + "-dot";
-          this.#API
-            .mount(batDot, `<x style="margin-inline:-0.35em;">&middot</x>`)
-            .insertBefore(batID);
-          this.#API.spot(batDot).viva().grow().during(0.7, 1);
-          this.#API.spot(`${id}-doppel-${i}`).spin().vault().moveBefore(batDot).during(0.3, 1);
-        }
-
-        return this.#API;
-      };
-
-      return { api: api, short: short, clean: clean };
-    }
-
-    #makeExitSkills() {
-      const skills = ["wink", "fliz"];
-
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      for (const skill of skills) {
-        const fixy = `${this.#opts.fix}-${skill}`;
-        api[skill] = (val = 1000) => {
-          const batties = this.#batties;
-          for (const bat of this.#batties) {
-            let targ;
-            if (bat.tagName === "path") {
-              bat.parentNode.setAttribute("data-exit", "");
-              targ = bat.parentNode;
-            } else {
-              this.#API.spot(bat.id);
-              this.#wrap(this.#batties, "exit");
-              targ = bat.children[0];
-            }
-            bat.style.setProperty(`--${fixy}-val`, `${val}ms`);
-            const anim = targ.getAnimations()?.[0];
-            if (!anim) continue;
-            anim.onfinish = (e) => {
-              bat.classList.add(fixy);
-              setTimeout(() => bat.classList.remove(fixy), val);
-            };
-          }
-          this.#batties = batties;
-          return this.#API;
-        };
-      }
-
-      return {
-        api: api,
-        short: short,
-        clean: clean,
+        ],
       };
     }
 
-    #makeFadeSkills() {
-      const skills = ["xfade", "absorb"];
+    // ... other omitted #makeSkills(){}
 
-      const api = {};
-      const short = {};
-      const clean = [];
-
-      const handle = (skill, ids) => {
-        const batties = this.#batties;
-        const bat0 = batties[0];
-        const ID = `${ids[0]}-${skill}`;
-
-        this.#API.mount(ID, "<x></x><x></x>");
-
-        this.#wrap(this.#batties, skill);
-
-        const EL = this.#API.pick(ID);
-
-        const [org, dop] = EL.children[0].children;
-
-        bat0.parentNode.insertBefore(EL, bat0);
-
-        for (const bat of batties) org.appendChild(bat);
-        for (const id of ids) dop.appendChild(this.#API.pick(id));
-
-        this.#measureElements(...EL.children[0].children);
-
-        for (const [key, val] of Object.entries({ org: org, dop: dop })) {
-          EL.children[0].style.setProperty(
-            `--${this.#opts.fix}-xfade-wide-${key}`,
-            `${Math.round(val.getBoundingClientRect().width)}px`,
-          );
-        }
-
-        return this.#API.spot(ID);
-      };
-
-      for (const skill of skills) {
-        const fixy = `${this.#opts.fix}-${skill}`;
-        api[skill] = (...ids) => handle(skill, [...new Set(ids)]);
-        short[fixy] = (bat) => this.#unShort(skill, bat);
-        clean.push((stage) => {
-          for (const bat of stage.querySelectorAll(`[data-${skill}]`)) {
-            bat.parentNode.replaceWith(...[...bat.children[1].childNodes]);
-          }
-        });
-      }
-
-      return { api: api, short: short, clean: clean };
-    }
     // #endregion
 
     // #region API SHORT & CLEAN
@@ -1503,11 +838,8 @@
       // load new stage if needed
       step.load ||= this.#stageObj.innerHTML;
 
-      // make the step tags
+      // make step stage and note tags
       const stepTag = this.#makeStepTag(step.load, step.note || "");
-
-      // step measuring
-      stepTag.setAttribute("data-measure", "");
 
       // set the stage object
       this.#stageObj = stepTag.children[0];
@@ -1515,7 +847,7 @@
       // replace shorthands
       this.#replaceShorthands(this.#stageObj);
 
-      // append the steptags
+      // append steptags in data-measure mode
       this.#holder.append(stepTag);
 
       // try to run the acts
@@ -1527,20 +859,18 @@
       // copy the step tags for next time
       const nextStep = this.#makeTag("x", stepTag.innerHTML, { step: "" });
 
+      // step tags done with measurements
+      stepTag.removeAttribute("data-measure");
+
+      // remove IDs || [make namespace IDs]
+      // this.#removeIDs(stepTag.children[0]);
+      this.#namespaceIDs(stepTag.children[0], this.#opts.fix, this.#stepNum);
+
       // run cleanups
-      this.#holder.append(nextStep);
       this.#runCleanups(nextStep);
-      nextStep.remove();
 
       // reset the stage to the cleaned version
       this.#stageObj = nextStep.children[0];
-
-      // remove IDs [or make #namespaceIDs()]
-      this.#removeIDs(stepTag.children[0]);
-      // this.#namespaceIDs(stepTag.children[0], this.#opts.fix, this.#stepNum);
-
-      // the tag is done with measurements
-      stepTag.removeAttribute("data-measure");
 
       // let em know you're rockin
       dispatch(this.#holder, `${this.#opts.fix}-#${this.#stepNum}-ready`);
@@ -1642,7 +972,7 @@
 
       document.head.appendChild(styleTag);
     } catch (err) {
-      log(err, "what happened?");
+      log("what happened?", err);
     }
 
     // REGISTER TAG
